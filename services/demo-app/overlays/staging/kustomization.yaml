@@ -16,7 +16,7 @@ patches:
       version: v1
       kind: Ingress
       name: flask-app-ingress
-    path: patches/ingress.yaml
+    path: config/ingress.yaml
 
 configMapGenerator:
 - name: flask-app-config
