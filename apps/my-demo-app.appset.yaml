@@ -1,0 +1,27 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: my-demo-app-1
+  namespace: demo-team
+spec:
+  goTemplate: true
+  goTemplateOptions: ["missingkey=error"]
+  generators:
+    - clusters: {}
+
+  template:
+    metadata:
+      name: '{{.name}}-my-demo-app-1'
+    spec:
+      project: default
+      syncPolicy: 
+        syncOptions:
+        - CreateNamespace=true
+      source:
+        repoURL: https://github.com/gruejay/k8s-monorepo-config.git
+        targetRevision: HEAD
+        path: "kustomize/my-demo-app-1/overlays/{{.name}}"
+      destination:
+        server: '{{.server}}'
+        namespace: '{{.name}}-my-demo-app-1'
+
