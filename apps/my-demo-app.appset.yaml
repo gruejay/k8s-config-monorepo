@@ -2,7 +2,6 @@ apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
   name: my-demo-app-1
-  namespace: demo-team-apps
 spec:
   goTemplate: true
   goTemplateOptions: ["missingkey=error"]
