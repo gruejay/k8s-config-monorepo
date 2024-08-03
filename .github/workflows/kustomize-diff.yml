@@ -85,7 +85,7 @@ jobs:
             $URL \
             -H "Content-Type: application/json" \
             -H "Authorization: token $GITHUB_TOKEN" \
-            --data-binary '@payload.json'
+            --data-binary '@output.json'
       - name: Add comment to PR if no changes
         if: ${{ !steps.changed-files.outputs.any_changed }}
         env:
