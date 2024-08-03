@@ -50,7 +50,7 @@ jobs:
           ALL_CHANGED_DIRS: ${{ steps.changed-files.outputs.all_changed_files }}
         run: |
            for d in ${ALL_CHANGED_DIRS}; do
-             service_name=$(echo $d | cut -d / -f 3)-$(basename ${d})
+             service_name=$(echo $d | cut -d / -f 2)-$(basename ${d})
              kustomize build pr/${d} > ${service_name}-pr.yml
              kustomize build target/${d} > ${service_name}-target.yml
              diff -U 7 ${service_name}-pr.yml ${service_name}-target.yml > ${service_name}-changes.diff || true
