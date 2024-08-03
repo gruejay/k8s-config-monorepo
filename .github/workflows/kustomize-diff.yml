@@ -40,9 +40,11 @@ jobs:
           path: pr
         
       - name: install kustomize
+        if: ${{ steps.changed-files.outputs.any_changed }}
         run: |
            curl -s "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh"  | bash
       - name: Diff each service
+        if: ${{ steps.changed-files.outputs.any_changed }}
         env:
           ALL_CHANGED_DIRS: ${{ steps.changed-files.outputs.all_changed_files }}
         run: |
@@ -52,6 +54,7 @@ jobs:
              diff -U 7 ${d}-pr.yml ${d}-target.yml > ${d}-changes.diff || true
            done
       - name: Report changes
+        if: ${{ steps.changed-files.outputs.any_changed }}
         env:
           ALL_CHANGED_DIRS: ${{ steps.changed-files.outputs.all_changed_files }}
         run: |
@@ -62,6 +65,7 @@ jobs:
           done
           cat *-results.txt > comment.txt
       - name: Add comment to PR
+        if: ${{ steps.changed-files.outputs.any_changed }}
         env:
           URL: ${{ github.event.pull_request.comments_url }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -72,3 +76,14 @@ jobs:
             -H "Content-Type: application/json" \
             -H "Authorization: token $GITHUB_TOKEN" \
             --data '{ "body": $(cat comment.txt) }'
+      - name: Add comment to PR if no changes
+        env:
+          URL: ${{ github.event.pull_request.comments_url }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          curl \
+            -X POST \
+            $URL \
+            -H "Content-Type: application/json" \
+            -H "Authorization: token $GITHUB_TOKEN" \
+            --data '{ "body": 'No changes' }'
