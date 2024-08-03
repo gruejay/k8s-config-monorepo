@@ -61,9 +61,14 @@ jobs:
             sed  -e "/DIFF_HERE/{r ${d}-changes.diff" -e "d}" qa-diff.txt > ${d}-result.txt
           done
           cat *-results.txt > comment.txt
-      - name: comment PR
-        uses: machine-learning-apps/pr-comment@master
+      - name: Add comment to PR
         env:
+          URL: ${{ github.event.pull_request.comments_url }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          path: comment.txt
+        run: |
+          curl \
+            -X POST \
+            $URL \
+            -H "Content-Type: application/json" \
+            -H "Authorization: token $GITHUB_TOKEN" \
+            --data '{ "body": $(cat comment.txt) }'
