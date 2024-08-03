@@ -86,4 +86,4 @@ jobs:
             $URL \
             -H "Content-Type: application/json" \
             -H "Authorization: token $GITHUB_TOKEN" \
-            --data '{ "body": 'No changes' }'
+            --data '{ "body": "No changes" }'
