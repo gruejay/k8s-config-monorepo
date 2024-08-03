@@ -39,10 +39,12 @@ jobs:
           files: services/**
             
         
-      - name: install kustomize
+      - name: install kustomize and jq
         if: ${{ steps.changed-files.outputs.any_changed }}
         run: |
            curl -s "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh"  | bash
+           apt update
+           apt install jq
       - name: Diff each service
         if: ${{ steps.changed-files.outputs.any_changed }}
         env:
@@ -61,8 +63,8 @@ jobs:
         run: |
           for d in ${ALL_CHANGED_DIRS}; do
             service_name=$(echo $d | cut -d / -f 3)-$(basename ${d})
-            wget https://raw.githubusercontent.com/gruejay/k8s-config-monorepo/test-pr/pr-comment-template.html
-            sed  "s/DESCRIPTION_HERE/${service_name}-Changes/g" pr-comment-template.html > ${service_name}-diff.txt
+            wget https://raw.githubusercontent.com/kostis-codefresh/kustomize-github-preview-diff/main/pr-comment-template.txt
+            sed  "s/DESCRIPTION_HERE/${service_name}-Changes/g" pr-comment-template.txt > ${service_name}-diff.txt
             sed  -e "/DIFF_HERE/{r ${service_name}-changes.diff" -e "d}" ${service_name}-diff.txt > ${service_name}-result.txt
           done
           cat *-result.txt > comment.txt
@@ -73,14 +75,18 @@ jobs:
           URL: ${{ github.event.pull_request.comments_url }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          printf "%s%s%s" '{ "body" : "' $(cat comment.txt) '" }' > payload.json
-          cat payload.json
+          file_content=$(<comment.txt)
+
+          # Escape backslashes and double quotes, then wrap the content in a JSON object
+          json_content=$(printf '%s' "$file_content" | jq -Rsa '{body: .}')
+          echo "$json_content" > output.json
+          cat ouput.json
           curl \
             -X POST \
             $URL \
             -H "Content-Type: application/json" \
             -H "Authorization: token $GITHUB_TOKEN" \
-            --data '@payload.json'
+            --data-binary '@payload.json'
       - name: Add comment to PR if no changes
         if: ${{ !steps.changed-files.outputs.any_changed }}
         env:
