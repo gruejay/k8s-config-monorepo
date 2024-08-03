@@ -33,8 +33,6 @@ jobs:
       - name: Get changed files
         id: changed-dirs
         uses: tj-actions/changed-files@v44
-        with:
-          path: pr
         
       - name: install kustomize
         if: ${{ steps.changed-files.outputs.any_changed }}
