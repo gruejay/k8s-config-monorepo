@@ -43,8 +43,7 @@ jobs:
         if: ${{ steps.changed-files.outputs.any_changed }}
         run: |
            curl -s "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh"  | bash
-           apt update
-           apt install jq
+
       - name: Diff each service
         if: ${{ steps.changed-files.outputs.any_changed }}
         env:
