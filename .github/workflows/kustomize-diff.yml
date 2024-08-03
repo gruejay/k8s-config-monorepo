@@ -1,0 +1,69 @@
+# This is a basic workflow to help you get started with Actions
+
+name: CI
+
+# Controls when the workflow will run
+on:
+  # Triggers the workflow on push or pull request events but only for the "main" branch
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # This workflow contains a single job called "build"
+  build:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      - name: Checkout PR
+        uses: actions/checkout@v3
+        with:
+         path: pr
+      - name: Checkout Target of PR
+        uses: actions/checkout@v3
+        with:
+          path: target
+          ref: ${{ github.event.pull_request.base.ref }}
+      - name: Get changed files
+        id: changed-dirs
+        uses: tj-actions/changed-files@v44
+        with:
+          dir_names: true
+          dir_names_max_depth: 4
+          path: pr
+        
+      - name: install kustomize
+        run: |
+           curl -s "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh"  | bash
+      - name: Diff each service
+        env:
+          ALL_CHANGED_DIRS: ${{ steps.changed-files.outputs.all_changed_files }}
+        run: |
+           for d in ${ALL_CHANGED_DIRS}; do
+             kustomize build pr/${d} > ${d}-pr.yml
+             kustomize build target/${d} > ${d}-target.yml
+             diff -U 7 ${d}-pr.yml ${d}-target.yml > ${d}-changes.diff || true
+           done
+      - name: Report changes
+        env:
+          ALL_CHANGED_DIRS: ${{ steps.changed-files.outputs.all_changed_files }}
+        run: |
+          for d in ${ALL_CHANGED_DIRS}; do
+            wget https://raw.githubusercontent.com/kostis-codefresh/kustomize-github-preview-diff/main/pr-comment-template.txt
+            sed  's/DESCRIPTION_HERE/${d}-Changes/g' pr-comment-template.txt > ${d}-diff.txt
+            sed  -e "/DIFF_HERE/{r ${d}-changes.diff" -e "d}" qa-diff.txt > ${d}-result.txt
+          done
+          cat *-results.txt > comment.txt
+      - name: comment PR
+        uses: machine-learning-apps/pr-comment@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          path: comment.txt
