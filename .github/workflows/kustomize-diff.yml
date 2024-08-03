@@ -79,7 +79,7 @@ jobs:
           # Escape backslashes and double quotes, then wrap the content in a JSON object
           json_content=$(printf '%s' "$file_content" | jq -Rsa '{body: .}')
           echo "$json_content" > output.json
-          cat ouput.json
+          cat output.json
           curl \
             -X POST \
             $URL \
