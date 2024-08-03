@@ -65,7 +65,7 @@ jobs:
             sed  's/DESCRIPTION_HERE/${service_name}-Changes/g' pr-comment-template.txt > ${service_name}-diff.txt
             sed  -e "/DIFF_HERE/{r ${service_name}-changes.diff" -e "d}" ${service_name}-diff.txt > ${service_name}-result.txt
           done
-          cat *-results.txt > comment.txt
+          cat *-result.txt > comment.txt
       - name: Add comment to PR
         if: ${{ steps.changed-files.outputs.any_changed }}
         env:
