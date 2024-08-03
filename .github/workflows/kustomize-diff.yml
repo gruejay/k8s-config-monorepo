@@ -49,9 +49,10 @@ jobs:
           ALL_CHANGED_DIRS: ${{ steps.changed-files.outputs.all_changed_files }}
         run: |
            for d in ${ALL_CHANGED_DIRS}; do
-             kustomize build pr/${d} > ${d}-pr.yml
-             kustomize build target/${d} > ${d}-target.yml
-             diff -U 7 ${d}-pr.yml ${d}-target.yml > ${d}-changes.diff || true
+             service_name=$(echo $d | cut -d / -f 3)-$(basename ${d})
+             kustomize build pr/${d} > ${service_name}-pr.yml
+             kustomize build target/${d} > ${service_name}-target.yml
+             diff -U 7 ${service_name}-pr.yml ${service_name}-target.yml > ${service_name}-changes.diff || true
            done
       - name: Report changes
         if: ${{ steps.changed-files.outputs.any_changed }}
@@ -59,9 +60,10 @@ jobs:
           ALL_CHANGED_DIRS: ${{ steps.changed-files.outputs.all_changed_files }}
         run: |
           for d in ${ALL_CHANGED_DIRS}; do
+            service_name=$(echo $d | cut -d / -f 3)-$(basename ${d})
             wget https://raw.githubusercontent.com/kostis-codefresh/kustomize-github-preview-diff/main/pr-comment-template.txt
             sed  's/DESCRIPTION_HERE/${d}-Changes/g' pr-comment-template.txt > ${d}-diff.txt
-            sed  -e "/DIFF_HERE/{r ${d}-changes.diff" -e "d}" qa-diff.txt > ${d}-result.txt
+            sed  -e "/DIFF_HERE/{r ${service_name}-changes.diff" -e "d}" qa-diff.txt > ${service_name}-result.txt
           done
           cat *-results.txt > comment.txt
       - name: Add comment to PR
