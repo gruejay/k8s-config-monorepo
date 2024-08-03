@@ -62,7 +62,7 @@ jobs:
           for d in ${ALL_CHANGED_DIRS}; do
             service_name=$(echo $d | cut -d / -f 3)-$(basename ${d})
             wget https://raw.githubusercontent.com/kostis-codefresh/kustomize-github-preview-diff/main/pr-comment-template.txt
-            sed  's/DESCRIPTION_HERE/${d}-Changes/g' pr-comment-template.txt > ${d}-diff.txt
+            sed  's/DESCRIPTION_HERE/${service_name}-Changes/g' pr-comment-template.txt > ${service_name}-diff.txt
             sed  -e "/DIFF_HERE/{r ${service_name}-changes.diff" -e "d}" qa-diff.txt > ${service_name}-result.txt
           done
           cat *-results.txt > comment.txt
