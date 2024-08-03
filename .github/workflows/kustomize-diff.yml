@@ -72,13 +72,15 @@ jobs:
           URL: ${{ github.event.pull_request.comments_url }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          printf "%s%s%s" '{ "body" : ' $(cat comment.txt) ' }' > payload.json
           curl \
             -X POST \
             $URL \
             -H "Content-Type: application/json" \
             -H "Authorization: token $GITHUB_TOKEN" \
-            --data '{ "body": $(cat comment.txt) }'
+            --data '@payload.json'
       - name: Add comment to PR if no changes
+        if: ${{ !steps.changed-files.outputs.any_changed }}
         env:
           URL: ${{ github.event.pull_request.comments_url }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
