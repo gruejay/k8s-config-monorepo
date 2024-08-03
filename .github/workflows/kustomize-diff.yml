@@ -66,6 +66,7 @@ jobs:
             sed  -e "/DIFF_HERE/{r ${service_name}-changes.diff" -e "d}" ${service_name}-diff.txt > ${service_name}-result.txt
           done
           cat *-result.txt > comment.txt
+          cat comment.txt
       - name: Add comment to PR
         if: ${{ steps.changed-files.outputs.any_changed }}
         env:
