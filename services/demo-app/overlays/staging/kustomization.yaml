@@ -8,7 +8,7 @@ namespace: my-demo-app-staging
 
 images:
   - name: gruejay/k8s-demo-flask-app
-    newTag: 1.5.1-monorepo
+    newTag: 1.5.1-monorep
 
 patches:
   - target:
@@ -22,4 +22,4 @@ configMapGenerator:
 - name: flask-app-config
   behavior: merge
   literals:
-  - FLASK_ENV=staging
+  - FLASK_ENV=staging-new

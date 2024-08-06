@@ -10,7 +10,8 @@ on:
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
-
+permissions:
+  pull-requests: write
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
   # This workflow contains a single job called "build"
@@ -21,35 +22,41 @@ jobs:
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
       - name: Checkout PR
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
          path: pr
       - name: Checkout Target of PR
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           path: target
           ref: ${{ github.event.pull_request.base.ref }}
       - name: Get changed files
-        id: changed-dirs
+        id: changed-files
         uses: tj-actions/changed-files@v44
         with:
           dir_names: true
           dir_names_max_depth: 4
-          path: pr
+          files: services/**
+            
         
-      - name: install kustomize
+      - name: install kustomize and jq
         if: ${{ steps.changed-files.outputs.any_changed }}
         run: |
            curl -s "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh"  | bash
+
       - name: Diff each service
         if: ${{ steps.changed-files.outputs.any_changed }}
         env:
           ALL_CHANGED_DIRS: ${{ steps.changed-files.outputs.all_changed_files }}
         run: |
            for d in ${ALL_CHANGED_DIRS}; do
-             kustomize build pr/${d} > ${d}-pr.yml
-             kustomize build target/${d} > ${d}-target.yml
-             diff -U 7 ${d}-pr.yml ${d}-target.yml > ${d}-changes.diff || true
+
+          
+              service_name=$(echo $d | cut -d / -f 2)-$(basename ${d})
+              kustomize build pr/${d} > ${service_name}-pr.yml
+              kustomize build target/${d} > ${service_name}-target.yml
+              diff -U 7 ${service_name}-pr.yml ${service_name}-target.yml > ${service_name}-changes.diff || true
+
            done
       - name: Report changes
         if: ${{ steps.changed-files.outputs.any_changed }}
@@ -57,24 +64,33 @@ jobs:
           ALL_CHANGED_DIRS: ${{ steps.changed-files.outputs.all_changed_files }}
         run: |
           for d in ${ALL_CHANGED_DIRS}; do
+            service_name=$(echo $d | cut -d / -f 2)-$(basename ${d})
             wget https://raw.githubusercontent.com/kostis-codefresh/kustomize-github-preview-diff/main/pr-comment-template.txt
-            sed  's/DESCRIPTION_HERE/${d}-Changes/g' pr-comment-template.txt > ${d}-diff.txt
-            sed  -e "/DIFF_HERE/{r ${d}-changes.diff" -e "d}" qa-diff.txt > ${d}-result.txt
+            sed  "s/DESCRIPTION_HERE/${service_name}-Changes/g" pr-comment-template.txt > ${service_name}-diff.txt
+            sed  -e "/DIFF_HERE/{r ${service_name}-changes.diff" -e "d}" ${service_name}-diff.txt > ${service_name}-result.txt
           done
-          cat *-results.txt > comment.txt
+          cat *-result.txt > comment.txt
+          cat comment.txt
       - name: Add comment to PR
         if: ${{ steps.changed-files.outputs.any_changed }}
         env:
           URL: ${{ github.event.pull_request.comments_url }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          file_content=$(<comment.txt)
+
+          # Escape backslashes and double quotes, then wrap the content in a JSON object
+          json_content=$(printf '%s' "$file_content" | jq -Rsa '{body: .}')
+          echo "$json_content" > output.json
+          cat output.json
           curl \
             -X POST \
             $URL \
             -H "Content-Type: application/json" \
             -H "Authorization: token $GITHUB_TOKEN" \
-            --data '{ "body": $(cat comment.txt) }'
+            --data-binary '@output.json'
       - name: Add comment to PR if no changes
+        if: ${{ !steps.changed-files.outputs.any_changed }}
         env:
           URL: ${{ github.event.pull_request.comments_url }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
