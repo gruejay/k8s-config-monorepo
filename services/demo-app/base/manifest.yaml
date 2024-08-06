@@ -4,7 +4,7 @@ kind: ConfigMap
 metadata:
   name: flask-app-config
 data:
-  FLASK_ENV: "unknown"
+  FLASK_ENV: staging
 ---
 apiVersion: apps/v1
 kind: Deployment
