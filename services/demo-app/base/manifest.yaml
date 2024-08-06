@@ -13,7 +13,7 @@ metadata:
   labels:
     app: flask-app
 spec:
-  replicas: 1
+  replicas: 2
   selector:
     matchLabels:
       app: flask-app
@@ -48,7 +48,7 @@ spec:
   ports:
     - protocol: TCP
       port: 80
-      targetPort: 8090
+      targetPort: 8046
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
